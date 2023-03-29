@@ -2,7 +2,11 @@ package com.example.retrofit
 
 import android.os.Bundle
 import android.util.Log
+import android.view.View
+import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProvider
 import com.example.retrofit.databinding.ActivityMainBinding
 import com.squareup.picasso.Picasso
 import kotlinx.coroutines.CoroutineScope
@@ -14,6 +18,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    private val viewModel: MainViewModel by viewModels()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,34 +27,17 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
 
-        val retrofit = Retrofit.Builder().baseUrl("https://dog.ceo/api/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-        val dogService = retrofit.create(ApiInterface::class.java)
 
 
-
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val response = dogService.getData()
-                if (response.isSuccessful) {
-                    val dogImage = response.body()
-                    runOnUiThread {
-
-                        Picasso.get().load(dogImage?.message).into(binding.imageView);
-                    }
-
-                    Log.e("MainActivity", "Response successful ${response.code()}")
-
-                } else {
-                    Log.e("MainActivity", "Response not successful ${response.code()}")
-                }
-
-            } catch (e: Exception) {
-                Log.e("MainActivity", "Error: ${e.message}")
+        viewModel.retrieveNetworkCall()
+        viewModel.dogResult.observe(this){dogResult ->
+            when (dogResult){
+                is ApiResponse.Loading -> Toast.makeText(this,"LOADING",Toast.LENGTH_SHORT).show()
+                is ApiResponse.Error -> Toast.makeText(this,"ERROR",Toast.LENGTH_SHORT).show()
+                is ApiResponse.Success<MyDataItem> -> Picasso.get().load(dogResult.body?.message).into(binding.imageView)
             }
-
         }
+        binding.imageView.visibility = View.VISIBLE
 
     }
 
