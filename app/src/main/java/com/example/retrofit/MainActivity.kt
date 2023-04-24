@@ -1,19 +1,14 @@
 package com.example.retrofit
 
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.example.retrofit.databinding.ActivityMainBinding
 import com.squareup.picasso.Picasso
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 
 class MainActivity : AppCompatActivity() {
 
@@ -30,17 +25,22 @@ class MainActivity : AppCompatActivity() {
 
 
         viewModel.retrieveNetworkCall()
-        viewModel.dogResult.observe(this){dogResult ->
-            when (dogResult){
-                is ApiResponse.Loading -> Toast.makeText(this,"LOADING",Toast.LENGTH_SHORT).show()
-                is ApiResponse.Error -> Toast.makeText(this,"ERROR",Toast.LENGTH_SHORT).show()
-                is ApiResponse.Success<MyDataItem> -> Picasso.get().load(dogResult.body?.message).into(binding.imageView)
+
+        lifecycleScope.launch {
+            viewModel.dogResult.collect { dogResult ->
+                when (dogResult) {
+                    is ApiResponse.Loading -> Toast.makeText(applicationContext, "LOADING", Toast.LENGTH_SHORT)
+                        .show()
+                    is ApiResponse.Error -> Toast.makeText(applicationContext, "ERROR", Toast.LENGTH_SHORT).show()
+                    is ApiResponse.Success<MyDataItem> -> Picasso.get()
+                        .load(dogResult.body?.message).into(binding.imageView)
+                }
+            binding.imageView.visibility = View.VISIBLE
             }
+
         }
-        binding.imageView.visibility = View.VISIBLE
 
     }
-
 }
 
 
